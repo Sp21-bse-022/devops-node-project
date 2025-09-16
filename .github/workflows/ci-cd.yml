@@ -3,7 +3,7 @@ name: Node.js CI/CD to AWS (Docker)
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
