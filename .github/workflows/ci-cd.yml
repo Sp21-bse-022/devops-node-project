@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -26,9 +27,13 @@ jobs:
       - name: Run tests
         run: npm test || echo "No tests found, skipping"
 
+ 
+
+
       - name: Deploy to AWS EC2 (Docker)
         uses: appleboy/ssh-action@v0.1.7
         with:
+          debug: true
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
