@@ -29,9 +29,10 @@ jobs:
         run: npm test || echo "No tests found, skipping"
 
       - name: Debug secret length
-        run: echo "Length: ${#SERVER_SSH_KEY}" | wc -c
+        run: |
+          echo "Length: ${#SERVER_SSH_KEY}"
         env:
-        SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       # Deploy to AWS EC2
 
       - name: Deploy to AWS EC2
