@@ -1,4 +1,4 @@
-name: Node.js CI/CD to AWS
+name: Node.js CI/CD to AWS (Docker)
 
 on:
   push:
@@ -10,44 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          ref: master   # 👈 ensures you’re on master branch
 
-      # Setup Node.js for build/test
-      - name: Set up Node.js
+      - name: Set up Node.js (for local npm commands if needed)
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # Install dependencies
-      - name: Install dependencies
+      - name: Install dependencies (optional, for CI tests)
         run: npm install
 
-      # Run tests (skip if none exist)
       - name: Run tests
         run: npm test || echo "No tests found, skipping"
 
-      - name: Debug secret length
-        run: |
-          echo "Length: ${#SERVER_SSH_KEY}"
-        env:
-          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-      # Deploy to AWS EC2
-
-      - name: Deploy to AWS EC2
+      - name: Deploy to AWS EC2 (Docker)
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            cd /home/ubuntu/devops-node-project || git clone git@github.com:Sp21-bse-022/devops-node-project.git /home/ubuntu/devops-node-project
+            set -e
             cd /home/ubuntu/devops-node-project
             git fetch --all
-            git reset --hard origin/main
-            npm install
-            # Restart app with PM2 (if already running) or start it
-            pm2 restart devops-app || pm2 start index.js --name devops-app
-            pm2 save
-
+            git reset --hard origin/master   # 👈 match your branch
+            sudo docker build -t devops-node-project .
+            sudo docker stop devops-node-project-container || true
+            sudo docker rm devops-node-project-container || true
+            sudo docker run -d -p 80:3000 --name devops-node-project-container devops-node-project
