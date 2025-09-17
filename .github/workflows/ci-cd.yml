@@ -1,48 +1,48 @@
-name: Node.js CI/CD to AWS (Docker)
+name: Node.js CI/CD to AWS
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js (for local npm commands if needed)
+      # Setup Node.js for build/test
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: Install dependencies (optional, for CI tests)
+      # Install dependencies
+      - name: Install dependencies
         run: npm install
 
+      # Run tests (skip if none exist)
       - name: Run tests
         run: npm test || echo "No tests found, skipping"
 
-      - name: Deploy to AWS EC2 (Docker)
+      # Deploy to AWS EC2
+      - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          passphrase: ${{ secrets.SERVER_SSH_PASSPHRASE }} # remove if key has no passphrase
           port: 22
           script: |
-            set -e
+            cd /home/ubuntu/devops-node-project || git clone git@github.com:Sp21-bse-022/devops-node-project.git /home/ubuntu/devops-node-project
             cd /home/ubuntu/devops-node-project
             git fetch --all
             git reset --hard origin/main
-
-            # Build Docker image
-            sudo docker build -t devops-node-project .
-
-            # Stop and remove old container if exists
-            sudo docker stop devops-node-project-container || true
-            sudo docker rm devops-node-project-container || true
-
-            # Run new container
-            sudo docker run -d -p 80:3000 --name devops-node-project-container devops-node-project
+            npm install
+            # Restart app with PM2 (if already running) or start it
+            pm2 restart devops-app || pm2 start index.js --name devops-app
+            pm2 save
