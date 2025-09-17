@@ -27,11 +27,17 @@ jobs:
       - name: Run tests
         run: npm test || echo "No tests found, skipping"
 
-      # --- NEW STEP: Write SSH key to file ---
+      # --- NEW STEP: Write SSH key to file with preserved line breaks ---
       - name: Setup SSH Key
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > key.pem
           chmod 600 key.pem
+
+      # Alternative safer way (preserves exact newlines):
+      # - name: Setup SSH Key
+      #   run: |
+      #     printf "%s\n" "${{ secrets.EC2_SSH_KEY }}" > key.pem
+      #     chmod 600 key.pem
 
       - name: Deploy to AWS EC2 (Docker)
         uses: appleboy/ssh-action@v0.1.7
